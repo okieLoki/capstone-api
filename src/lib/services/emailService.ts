@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { config } from "../config";
+import { config } from "../../config";
 
 const transporter = nodemailer.createTransport({
   host: "smtp.ethereal.email",
@@ -19,8 +19,10 @@ export const sendEmailVerificationMail = async (
       from: config.SMTP_USER,
       to: email,
       subject: "Email Verification",
-      text: `Click on the link to verify your email: http://localhost:8080/admin/email/verify?token=${token}`,
+      text: `Click on the link to verify your email: ${config.BASE_URL}/admin/email/verify?token=${token}`,
     });
+
+    console.log(`${config.BASE_URL}/admin/email/verify?token=${token}`)
 
     console.log("Message sent: %s", info.messageId);
   } catch (error) {

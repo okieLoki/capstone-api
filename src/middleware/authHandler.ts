@@ -3,6 +3,7 @@ import createError from "http-errors";
 import jwt from "jsonwebtoken";
 import { AdminModel } from "../models/admin";
 import { config } from "../config";
+import mongoose from "mongoose";
 
 declare global {
   namespace Express {
@@ -13,7 +14,7 @@ declare global {
 }
 
 interface AdminInterface {
-  id: string;
+  id: mongoose.Types.ObjectId | string;
   email: string;
 }
 
@@ -22,6 +23,8 @@ export const adminAuthHandler = async (
   res: Response,
   next: NextFunction
 ) => {
+
+  console.log("adminAuthHandler");
   try {
     if (!req.headers.authorization)
       throw new createError.Unauthorized("Token is absent");
@@ -39,12 +42,12 @@ export const adminAuthHandler = async (
       throw new createError.Unauthorized("Invalid token, or no user found");
 
     req.admin = {
-      id: admin._id.toString(),
+      id: admin._id,
       email: admin.email,
     };
 
     next();
   } catch (error) {
-    next();
+    next(error);
   }
 };

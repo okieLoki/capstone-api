@@ -1,5 +1,6 @@
 import express, { Application } from "express";
 import { config } from "./config";
+import morgan from "morgan";
 import { adminRouter } from "./routes/adminRoutes";
 import { errorHandler } from "./middleware/errorHandler";
 
@@ -9,6 +10,7 @@ config.verifyConfig();
 config.databaseConnection();
 
 app.use(express.json());
+app.use(morgan("dev"));
 
 app.use("/admin", adminRouter.routes());
 

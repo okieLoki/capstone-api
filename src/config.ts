@@ -7,6 +7,7 @@ class Config {
   public readonly SMTP_USER: string;
   public readonly SMTP_PASS: string;
   public readonly JWT_SECRET: string;
+  public readonly BASE_URL: string;
 
   constructor() {
     this.PORT = Number(process.env.PORT) || 8080;
@@ -14,6 +15,7 @@ class Config {
     this.SMTP_USER = process.env.SMTP_USER || "";
     this.SMTP_PASS = process.env.SMTP_PASS || "";
     this.JWT_SECRET = process.env.JWT_SECRET || "";
+    this.BASE_URL = process.env.BASE_URL || `http://localhost:${this.PORT}`;
   }
 
   public verifyConfig(): void {

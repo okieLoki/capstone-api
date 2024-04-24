@@ -1,22 +1,23 @@
 import { NextFunction, Request, Response } from "express";
 import { AdminModel } from "../models/admin";
 import {
+  addResearcherValidator,
   createAdminAccountValidator,
   loginAccountValidator,
-} from "../validators/adminValidators";
-import { sendEmailVerificationMail } from "../lib/emailService";
+} from "../lib/validators/adminValidators";
+import { sendEmailVerificationMail } from "../lib/services/emailService";
 import createError from "http-errors";
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { config } from "../config";
 import mongoose from "mongoose";
+import { ResearcherModel } from "../models/researcher";
+import { researcherScrapper } from "../lib/scrapper/researcherScapper";
+import { ResearcherData } from "../types";
+import { PaperModel } from "../models/papers";
 
 export class AdminController {
-  private generateToken(id: mongoose.Types.ObjectId, email: string) {
-    return jwt.sign({ id, email }, config.JWT_SECRET);
-  }
-
   public async createAdminAccount(
     req: Request,
     res: Response,
@@ -104,7 +105,11 @@ export class AdminController {
       if (!isPasswordValid)
         throw new createError.Unauthorized("Invalid password");
 
-      const token = this.generateToken(admin._id, admin.email);
+      const token = await jwt.sign(
+        { id: admin._id.toString() },
+        config.JWT_SECRET,
+        { expiresIn: "1h" }
+      );
 
       res.setHeader("Authorization", `Bearer ${token}`);
 
@@ -120,6 +125,55 @@ export class AdminController {
       next(error);
     }
   }
+  public async addReseacher(req: Request, res: Response, next: NextFunction) {
+    try {
+      const admin = req.admin;
+      const { scholar_id, email } = addResearcherValidator.parse(req.body);
 
- 
+      const researcher = await ResearcherModel.findOne({ scholar_id });
+
+      if (researcher) {
+        if (researcher.admin_id!.toString() === admin.id.toString())
+          throw new createError.BadRequest("Researcher already added");
+        else
+          throw new createError.BadRequest(
+            "Researcher already added by another admin"
+          );
+      }
+
+      const reseacherData: ResearcherData =
+        await researcherScrapper.getResearcherData(scholar_id);
+
+      // if (
+      //   reseacherData.emailEnding !== email.split("@")[1] ||
+      //   admin.email.split("@")[1] !== email.split("@")[1]
+      // ) {
+      //   throw new createError.BadRequest("Email domain doesn't match");
+      // }
+
+      const newResearcher = await ResearcherModel.create({
+        scholar_id,
+        email,
+        admin_id: admin.id,
+        citations: reseacherData.citations,
+        h_index: reseacherData.hIndex,
+        i_index: reseacherData.i10Index,
+        name: reseacherData.name,
+      });
+
+      const papersData = await researcherScrapper.scrapeArticles(scholar_id);
+      papersData.forEach((paper) => {
+        paper.researcher_id = newResearcher._id;
+      });
+      
+      await PaperModel.insertMany(papersData);
+
+      return res.status(201).json({
+        message: "Researcher added successfully",
+      });
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  }
 }

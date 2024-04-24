@@ -23,11 +23,11 @@ export const paperSchema = new Schema({
     type: String,
     required: true,
   },
-  year: {
+  publicationYear: {
     type: Number,
     required: true,
   },
-  total_citations: {
+  totalCitations: {
     type: Number,
     required: true,
   },
