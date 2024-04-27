@@ -6,6 +6,11 @@ export const paperSchema = new Schema({
     ref: "Researcher",
     required: true,
   },
+  admin_id: {
+    type: mongoose.Types.ObjectId,
+    ref: "Admin",
+    required: true,
+  },
   title: {
     type: String,
     required: true,
@@ -21,7 +26,6 @@ export const paperSchema = new Schema({
   ],
   publication: {
     type: String,
-    required: true,
   },
   publicationYear: {
     type: Number,
@@ -30,6 +34,10 @@ export const paperSchema = new Schema({
   totalCitations: {
     type: Number,
     required: true,
+  },
+  lastFetch: {
+    type: Date,
+    default: Date.now,
   },
 });
 

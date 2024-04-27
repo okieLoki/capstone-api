@@ -3,11 +3,14 @@ import { config } from "./config";
 import morgan from "morgan";
 import { adminRouter } from "./routes/adminRoutes";
 import { errorHandler } from "./middleware/errorHandler";
+import { databaseConnection } from "./config/mongodb";
+import { rabbitmq } from "./config/rabbitmq";
 
 const app: Application = express();
 
 config.verifyConfig();
-config.databaseConnection();
+databaseConnection();
+rabbitmq.rabbitmqConnect();
 
 app.use(express.json());
 app.use(morgan("dev"));

@@ -24,12 +24,6 @@ export const researcherSchema = new Schema({
     ref: "Admin",
     required: true,
   },
-  papers: [
-    {
-      type: mongoose.Types.ObjectId,
-      ref: "Paper",
-    },
-  ],
   citations: {
     type: Number,
   },

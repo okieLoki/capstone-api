@@ -11,11 +11,25 @@ import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { config } from "../config";
-import mongoose from "mongoose";
 import { ResearcherModel } from "../models/researcher";
-import { researcherScrapper } from "../lib/scrapper/researcherScapper";
 import { ResearcherData } from "../types";
-import { PaperModel } from "../models/papers";
+import mongoose from "mongoose";
+import amqp from "amqplib";
+import { researcherScrapper } from "../lib/scrapper/researcherScapper";
+import { rabbitmq } from "../config/rabbitmq";
+
+declare global {
+  namespace Express {
+    interface Request {
+      admin: AdminInterface;
+    }
+  }
+}
+
+interface AdminInterface {
+  id: mongoose.Types.ObjectId | string;
+  email: string;
+}
 
 export class AdminController {
   public async createAdminAccount(
@@ -144,13 +158,6 @@ export class AdminController {
       const reseacherData: ResearcherData =
         await researcherScrapper.getResearcherData(scholar_id);
 
-      // if (
-      //   reseacherData.emailEnding !== email.split("@")[1] ||
-      //   admin.email.split("@")[1] !== email.split("@")[1]
-      // ) {
-      //   throw new createError.BadRequest("Email domain doesn't match");
-      // }
-
       const newResearcher = await ResearcherModel.create({
         scholar_id,
         email,
@@ -161,12 +168,14 @@ export class AdminController {
         name: reseacherData.name,
       });
 
-      const papersData = await researcherScrapper.scrapeArticles(scholar_id);
-      papersData.forEach((paper) => {
-        paper.researcher_id = newResearcher._id;
-      });
-      
-      await PaperModel.insertMany(papersData);
+      await rabbitmq.publish(
+        "researcher-queue",
+        JSON.stringify({ 
+          scholar_id: newResearcher.scholar_id,
+          admin_id: newResearcher.admin_id,
+          researcher_id: newResearcher._id,
+         })
+      )
 
       return res.status(201).json({
         message: "Researcher added successfully",

@@ -8,6 +8,8 @@ class Config {
   public readonly SMTP_PASS: string;
   public readonly JWT_SECRET: string;
   public readonly BASE_URL: string;
+  public readonly LOG_LEVEL: string;
+  public readonly RABBITMQ_URL: string;
 
   constructor() {
     this.PORT = Number(process.env.PORT) || 8080;
@@ -16,6 +18,8 @@ class Config {
     this.SMTP_PASS = process.env.SMTP_PASS || "";
     this.JWT_SECRET = process.env.JWT_SECRET || "";
     this.BASE_URL = process.env.BASE_URL || `http://localhost:${this.PORT}`;
+    this.LOG_LEVEL = process.env.LOG_LEVEL || "info";
+    this.RABBITMQ_URL = process.env.RABBITMQ_URL || "";
   }
 
   public verifyConfig(): void {
@@ -39,16 +43,6 @@ class Config {
     }
   }
 
-  public databaseConnection(): void {
-    mongoose.connect(this.DATABASE_URL);
-
-    const db = mongoose.connection;
-
-    db.on("error", console.error.bind(console, "connection error:"));
-    db.once("open", () => {
-      console.log("Connected to database");
-    });
-  }
 }
 
 export const config: Config = new Config();
