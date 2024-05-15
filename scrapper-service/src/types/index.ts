@@ -7,8 +7,12 @@ export type Article = {
   publication: string;
   publicationYear: number;
   totalCitations: number;
-  researcher_id?: mongoose.Types.ObjectId;
   admin_id?: mongoose.Types.ObjectId;
+  researcher? : {
+    researcher_id: mongoose.Types.ObjectId;
+    name: string;
+    scholar_id: string;
+  }
 };
 export type ArticleExtended = {
   title: string;
@@ -24,20 +28,28 @@ export type ArticleExtended = {
   totalCitations: number;
   publicationLink: string;
   pdfLink: string;
-  researcher_id?: mongoose.Types.ObjectId;
   admin_id?: mongoose.Types.ObjectId;
+  researcher? : {
+    researcher_id: mongoose.Types.ObjectId;
+    name: string;
+    scholar_id: string;
+  }
 };
 
 export type ArticleQueueMessage = {
+  researcher: {
     researcher_id: string;
+    name: string;
     scholar_id: string;
-    admin_id: string;
-}
+  };
+  scholar_id: string;
+  admin_id: string;
+};
 
 export type ResearcherData = {
-    name: string;
-    emailEnding: string;
-    citations: string;
-    hIndex: string;
-    i10Index: string;
-  };
+  name: string;
+  emailEnding: string;
+  citations: string;
+  hIndex: string;
+  i10Index: string;
+};

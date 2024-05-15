@@ -120,7 +120,6 @@ class ArticleScrapper {
         const $ = load(content);
         const articleLinks: string[] = [];
 
-        let count = 0;
 
         if (detailed) {
           $(".gsc_a_tr").each((_i, el) => {
@@ -133,9 +132,6 @@ class ArticleScrapper {
           for (let link of articleLinks) {
             const articleData = await this.getIndividualArticleData(link);
             articles.push(articleData);
-            count++;
-
-            if (count === 5) break;
           }
         } else {
           $(".gsc_a_tr").each((_i, el) => {

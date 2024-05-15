@@ -1,10 +1,20 @@
 import mongoose, { InferSchemaType, Schema } from "mongoose";
 
 export const paperSchema = new Schema({
-  researcher_id: {
-    type: mongoose.Types.ObjectId,
-    ref: "Researcher",
-    required: true,
+  researcher: {
+    researcher_id: {
+      type: mongoose.Types.ObjectId,
+      ref: "Researcher",
+      required: true,
+    },
+    name: {
+      type: String,
+      required: true,
+    },
+    scholar_id: {
+      type: String,
+      required: true,
+    },
   },
   admin_id: {
     type: mongoose.Types.ObjectId,

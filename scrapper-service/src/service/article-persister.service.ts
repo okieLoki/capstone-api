@@ -13,20 +13,27 @@ class ArticlePersister {
           message.content.toString()
         );
 
+        console.log(profileToFetch);
+
         l.info(
-          `[ARTICLE PERSISTER] Fetching data for ${profileToFetch.scholar_id} - admin: ${profileToFetch.admin_id} `
+          `[ARTICLE PERSISTER] Fetching data for ${profileToFetch.researcher.scholar_id} - admin: ${profileToFetch.admin_id} `
         );
 
         const articles = await articleScrapper.scrapeArticles(
-          profileToFetch.scholar_id
+          profileToFetch.researcher.scholar_id
         );
+
 
         l.info(
           `[ARTICLE PERSISTER] Found ${articles.length} articles for ${profileToFetch.scholar_id}`
         );
 
         for (let article of articles) {
-          article.researcher_id  = new mongoose.Types.ObjectId(profileToFetch.researcher_id);
+          article.researcher = {
+            researcher_id: new mongoose.Types.ObjectId(profileToFetch.researcher.researcher_id),
+            name: profileToFetch.researcher.name,
+            scholar_id: profileToFetch.researcher.scholar_id,
+          }
           article.admin_id = new mongoose.Types.ObjectId(profileToFetch.admin_id);
           const paper = new PaperModel(article);
           await paper.save();

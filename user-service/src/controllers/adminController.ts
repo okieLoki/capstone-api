@@ -148,7 +148,7 @@ export class AdminController {
 
       if (researcher) {
         if (researcher.admin_id!.toString() === admin.id.toString())
-          throw new createError.BadRequest("Researcher already added");
+          throw new createError.BadRequest("Researcher already added by you");
         else
           throw new createError.BadRequest(
             "Researcher already added by another admin"
@@ -171,9 +171,12 @@ export class AdminController {
       await rabbitmq.publish(
         "researcher-queue",
         JSON.stringify({ 
-          scholar_id: newResearcher.scholar_id,
           admin_id: newResearcher.admin_id,
-          researcher_id: newResearcher._id,
+          researcher: {
+            researcher_id: newResearcher._id,
+            name: newResearcher.name,
+            scholar_id: newResearcher.scholar_id,
+          }
          })
       )
 
