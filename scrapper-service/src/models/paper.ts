@@ -34,17 +34,43 @@ export const paperSchema = new Schema({
       type: String,
     },
   ],
-  publication: {
+  publicationDate: {
+    type: Date,
+    required: true,
+  },
+  journal: {
     type: String,
   },
-  publicationYear: {
-    type: Number,
-    required: true,
+  volume: {
+    type: String,
+  },
+  issue: {
+    type: String,
+  },
+  pages: {
+    type: String,
+  },
+  publisher: {
+    type: String,
+  },
+  description: {
+    type: String,
   },
   totalCitations: {
     type: Number,
-    required: true,
+    default: 0,
   },
+  publicationLink: {
+    type: String,
+  },
+  pdfLink: {
+    type: String,
+  },
+  tags: [
+    {
+      type: String,
+    },
+  ],
   lastFetch: {
     type: Date,
     default: Date.now,

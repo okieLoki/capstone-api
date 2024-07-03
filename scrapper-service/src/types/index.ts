@@ -18,7 +18,7 @@ export type ArticleExtended = {
   title: string;
   link: string;
   authors: string[];
-  publicationDate: string;
+  publicationDate: string | Date;
   journal: string;
   volume: string;
   issue: string;

@@ -1,8 +1,9 @@
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import AdblockerPlugin from "puppeteer-extra-plugin-adblocker";
-import type { Article, ArticleExtended } from "../../types";
+import { ArticleExtended } from "../../types";
 import { load } from "cheerio";
+import * as async from "async";
 
 puppeteer.use(StealthPlugin());
 puppeteer.use(
@@ -12,18 +13,18 @@ puppeteer.use(
 );
 
 class ArticleScrapper {
-  public async getIndividualArticleData(
+  private async getIndividualArticleData(
     articleLink: string
   ): Promise<ArticleExtended> {
-    try {
-      const browser = await puppeteer.launch({
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-        ],
-      });
+    const browser = await puppeteer.launch({
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+      ],
+    });
 
+    try {
       const page = await browser.newPage();
       await page.goto(articleLink, {
         waitUntil: "networkidle0",
@@ -67,8 +68,6 @@ class ArticleScrapper {
         .first()
         .attr("href");
 
-      await browser.close();
-
       return {
         title,
         link: articleLink,
@@ -84,95 +83,69 @@ class ArticleScrapper {
         publicationLink: `https://scholar.google.com${publicationLink}`,
         pdfLink: pdfLink || "No PDF available",
       };
-    } catch (error) {
-      throw new Error(error as string);
+    } finally {
+      await browser.close();
     }
   }
 
   public async scrapeArticles(
     userId: string,
-    articlePagination: boolean = true,
-    detailed: boolean = false
-  ) {
-    try {
-      let articles: (Article | ArticleExtended)[] = [];
-      let pageNumber: number = 1;
-      let hasNextPage: boolean = true;
+    articlePagination: boolean = true
+  ): Promise<ArticleExtended[]> {
+    let articles: ArticleExtended[] = [];
+    let pageNumber: number = 1;
+    let hasNextPage: boolean = true;
 
-      const browser = await puppeteer.launch({
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-        ],
+    const browser = await puppeteer.launch({
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+      ],
+    });
+
+    const page = await browser.newPage();
+    await page.goto(
+      `https://scholar.google.com/citations?user=${userId}&hl=en&gl=us&pagesize=100`,
+      {
+        waitUntil: "networkidle0",
+      }
+    );
+
+    while (hasNextPage) {
+      const content = await page.content();
+      const $ = load(content);
+      const articleLinks: string[] = [];
+
+      $(".gsc_a_tr").each((_i, el) => {
+        const articleLink = `https://scholar.google.com${$(el)
+          .find(".gsc_a_at")
+          .attr("href")}`;
+        articleLinks.push(articleLink);
       });
 
-      const page = await browser.newPage();
-      await page.goto(
-        `https://scholar.google.com/citations?user=${userId}&hl=en&gl=us&pagesize=100`,
-        {
-          waitUntil: "networkidle0",
-        }
+      const articleDataArray = await async.mapLimit(
+        articleLinks,
+        20,
+        async (link) => await this.getIndividualArticleData(link)
       );
+      articles.push(...(articleDataArray as ArticleExtended[]));
 
-      while (hasNextPage) {
-        const content = await page.content();
-        const $ = load(content);
-        const articleLinks: string[] = [];
-
-
-        if (detailed) {
-          $(".gsc_a_tr").each((_i, el) => {
-            const articleLink = `https://scholar.google.com${$(el)
-              .find(".gsc_a_at")
-              .attr("href")}`;
-            articleLinks.push(articleLink);
-          });
-
-          for (let link of articleLinks) {
-            const articleData = await this.getIndividualArticleData(link);
-            articles.push(articleData);
+      hasNextPage = articlePagination && $(".gsc_a_e").length > 0;
+      if (hasNextPage) {
+        pageNumber += 100;
+        await page.goto(
+          `https://scholar.google.com/citations?user=${userId}&hl=en&gl=us&cstart=${pageNumber}&pagesize=100`,
+          {
+            waitUntil: "networkidle0",
           }
-        } else {
-          $(".gsc_a_tr").each((_i, el) => {
-            let articleTitle = $(el).find(".gsc_a_at").text();
-            let articleLink = `https://scholar.google.com${$(el)
-              .find(".gsc_a_at")
-              .attr("href")}`;
-            let articleAuthors = $(el).find(".gsc_a_at + .gs_gray").text();
-            let articlePublication = $(el).find(".gs_gray + .gs_gray").text();
-            let totalCitations = $(el).find(".gsc_a_ac").text();
-            let publicationYear = $(el).find(".gsc_a_hc").text();
-
-            articles.push({
-              title: articleTitle,
-              link: articleLink,
-              authors: articleAuthors.split(", "),
-              publication: articlePublication,
-              publicationYear: publicationYear ? parseInt(publicationYear) : 0,
-              totalCitations: totalCitations ? parseInt(totalCitations) : 0,
-            });
-          });
-        }
-
-        hasNextPage = articlePagination && $(".gsc_a_e").length > 0;
-        if (hasNextPage) {
-          pageNumber += 100;
-          await page.goto(
-            `https://scholar.google.com/citations?user=${userId}&hl=en&gl=us&cstart=${pageNumber}&pagesize=100`,
-            {
-              waitUntil: "networkidle0",
-            }
-          );
-        }
+        );
       }
-
-      await browser.close();
-
-      return articles;
-    } catch (error) {
-      throw new Error(error as string);
     }
+
+    await browser.close();
+
+    return articles;
   }
 }
 

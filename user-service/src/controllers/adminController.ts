@@ -17,6 +17,7 @@ import mongoose from "mongoose";
 import amqp from "amqplib";
 import { researcherScrapper } from "../lib/scrapper/researcherScapper";
 import { rabbitmq } from "../config/rabbitmq";
+import { queues } from "../config/enum";
 
 declare global {
   namespace Express {
@@ -169,7 +170,7 @@ export class AdminController {
       });
 
       await rabbitmq.publish(
-        "researcher-queue",
+        queues.RESEARCHER_QUEUE,
         JSON.stringify({ 
           admin_id: newResearcher.admin_id,
           researcher: {
