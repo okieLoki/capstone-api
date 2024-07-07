@@ -94,8 +94,6 @@ class CalculationService {
         };
       });
 
-      console.log(yearWiseDataProcessed);
-
       await YearWiseDataModel.create(yearWiseDataProcessed);
       l.info("[CALCULATION SERVICE]: Year wise data saved to database");
     } catch (error) {
@@ -114,9 +112,9 @@ class CalculationService {
     return hIndex;
   }
 
-    private calculateIIndex(citations: number[]) {
-        return citations.filter((citation) => citation >= 10).length;
-    }
+  private calculateIIndex(citations: number[]) {
+    return citations.filter((citation) => citation >= 10).length;
+  }
 }
 
 export const calculationService = new CalculationService();
