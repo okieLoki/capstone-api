@@ -18,10 +18,11 @@ class ArticleScrapper {
   ): Promise<ArticleExtended> {
     const browser = await puppeteer.launch({
       args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-      ],
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        // '--single-process',
+      ],headless:true
     });
 
     try {
@@ -124,13 +125,17 @@ class ArticleScrapper {
         articleLinks.push(articleLink);
       });
 
-      const articleDataArray = await async.mapLimit(
-        articleLinks,
-        20,
-        async (link) => await this.getIndividualArticleData(link)
-      );
-      articles.push(...(articleDataArray as ArticleExtended[]));
+      // const articleDataArray = await async.mapLimit(
+      //   articleLinks,
+      //   5,
+      //   async (link) => await this.getIndividualArticleData(link)
+      // );
+      // articles.push(...(articleDataArray as ArticleExtended[]));
+const articleDataArray = await Promise.all(
+  articleLinks.map((link) => this.getIndividualArticleData(link))
+);
 
+articles.push(...articleDataArray);
       hasNextPage = articlePagination && $(".gsc_a_e").length > 0;
       if (hasNextPage) {
         pageNumber += 100;
